@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Octopus Wall</title>
+  <style>
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* Background Video */
+    #bgVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+      /* Adjust brightness as necessary */
+      filter: brightness(0.8);
+    }
+    body {
+      font-family: 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      padding: 20px;
+      background-color: #000;
+    }
+    /* Header Styling with Red & Black Gradient */
+    header {
+      background: linear-gradient(135deg, #b30000, #0d0d0d);
+      padding: 20px 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    }
+    header h1 {
+      font-size: 24px;
+    }
+    header .buttons {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 18px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    /* Post Button */
+    #postBtn {
+      background-color: #b30000;
+      color: #fff;
+      font-weight: bold;
+    }
+    #postBtn:hover {
+      background-color: #a30000;
+      transform: scale(1.03);
+    }
+    /* Clear Button */
+    #clearBtn {
+      background-color: #0d0d0d;
+      color: #b30000;
+    }
+    #clearBtn:hover {
+      background-color: #1a1a1a;
+      transform: scale(1.03);
+    }
+    /* Container Styling */
+    .container {
+      max-width: 95%;
+      margin: 0 auto;
+    }
+    /* Masonry Layout Using CSS Columns */
+    .grid {
+      column-count: 3;
+      column-gap: 15px;
+    }
+    .grid-item {
+      break-inside: avoid;
+      margin-bottom: 15px;
+      background-color: #1a1a1a;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(179, 0, 0, 0.5);
+      animation: fadeIn 0.5s ease;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .grid-item img {
+      width: 100%;
+      display: block;
+    }
+    /* Delete Button Overlay */
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: rgba(179, 0, 0, 0.8);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .grid-item:hover .delete-btn {
+      opacity: 1;
+    }
+    /* FadeIn Animation for Grid Items */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Responsive Adjustments */
+    @media (max-width: 800px) {
+      .grid {
+        column-count: 2;
+      }
+    }
+    @media (max-width: 500px) {
+      .grid {
+        column-count: 1;
+      }
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header .buttons {
+        margin-top: 10px;
+      }
+    }
+  </style>
+</head>
+<body>
+<!-- Background Video Element -->
+<video autoplay muted loop id="bgVideo">
+  <source src="video2.mp4" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
+<header>
+  <h1>Octopus Wall</h1>
+  <div class="buttons">
+    <button id="postBtn">Add More</button>
+    <button id="clearBtn">Clear The Wall</button>
+  </div>
+  <!-- Hidden File Input to Trigger File Selection -->
+  <input type="file" id="fileInput" accept="image/*" style="display: none;" multiple />
+</header>
+
+<div class="container">
+  <div class="grid" id="imageGrid">
+    <!-- Dynamically Added Images Will Appear Here -->
+  </div>
+</div>
+
+<script>
+  // Define your master key (change as needed)
+  const MASTER_KEY = "Thedonstar12345@#$";
+
+  const postBtn = document.getElementById('postBtn');
+  const clearBtn = document.getElementById('clearBtn');
+  const fileInput = document.getElementById('fileInput');
+  const imageGrid = document.getElementById('imageGrid');
+  const bgVideo = document.getElementById('bgVideo');
+
+  // Set the video playback rate to 0.3 (30% speed)
+  window.addEventListener('DOMContentLoaded', () => {
+    if (bgVideo) {
+      bgVideo.playbackRate = 0.3;
+    }
+  });
+
+  // Trigger file selection when Post button is clicked
+  postBtn.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // Clear the gallery after verifying the master key
+  clearBtn.addEventListener('click', () => {
+    const key = prompt("Enter master key to clear the gallery:");
+    if (key !== MASTER_KEY) {
+      alert("Incorrect master key. Gallery not cleared.");
+      return;
+    }
+    localStorage.removeItem('images');
+    imageGrid.innerHTML = ''; // Remove all images from the grid
+  });
+
+  // LocalStorage helper functions
+  function saveImagesToStorage(imagesArray) {
+    localStorage.setItem('images', JSON.stringify(imagesArray));
+  }
+  function loadImagesFromStorage() {
+    const storedImages = localStorage.getItem('images');
+    return storedImages ? JSON.parse(storedImages) : [];
+  }
+
+  // Function to create and append an image element in the grid
+  function addImageToGrid(src) {
+    const gridItem = document.createElement('div');
+    gridItem.className = 'grid-item';
+
+    const img = document.createElement('img');
+    img.src = src;
+    gridItem.appendChild(img);
+
+    // Create delete button overlay for individual image deletion
+    const deleteBtn = document.createElement('button');
+    deleteBtn.className = 'delete-btn';
+    deleteBtn.textContent = '×';
+    deleteBtn.addEventListener('click', (event) => {
+      event.stopPropagation();
+      const key = prompt("Enter master key to delete this image:");
+      if (key !== MASTER_KEY) {
+        alert("Incorrect master key. Image not deleted.");
+        return;
+      }
+      deleteImage(src, gridItem);
+    });
+    gridItem.appendChild(deleteBtn);
+
+    imageGrid.appendChild(gridItem);
+  }
+
+  // Function to delete an image from the grid and update localStorage
+  function deleteImage(src, gridItem) {
+    gridItem.remove();
+    let imagesArray = loadImagesFromStorage();
+    const index = imagesArray.findIndex(image => image === src);
+    if (index > -1) {
+      imagesArray.splice(index, 1);
+    }
+    saveImagesToStorage(imagesArray);
+  }
+
+  // Function to resize/compress the image using a canvas
+  function resizeImage(file, maxWidth = 600, quality = 0.7) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = function(event) {
+        const img = new Image();
+        img.onload = function() {
+          const scaleFactor = maxWidth / img.width;
+          const canvas = document.createElement('canvas');
+          canvas.width = maxWidth;
+          canvas.height = img.height * scaleFactor;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+          const dataUrl = canvas.toDataURL('image/jpeg', quality);
+          resolve(dataUrl);
+        };
+        img.onerror = reject;
+        img.src = event.target.result;
+      };
+      reader.onerror = reject;
+      reader.readAsDataURL(file);
+    });
+  }
+
+  // Handle image uploads (with resizing) and update storage
+  fileInput.addEventListener('change', async (event) => {
+    const files = Array.from(event.target.files);
+    let imagesArray = loadImagesFromStorage();
+    try {
+      const newImages = await Promise.all(
+        files
+          .filter(file => file && file.type.startsWith('image/'))
+          .map(file => resizeImage(file))
+      );
+      newImages.forEach(src => addImageToGrid(src));
+      imagesArray = imagesArray.concat(newImages);
+      saveImagesToStorage(imagesArray);
+    } catch (error) {
+      console.error('Error processing files:', error);
+    }
+    fileInput.value = ''; // Reset file input
+  });
+
+  // Load stored images on page load
+  window.addEventListener('DOMContentLoaded', () => {
+    const storedImages = loadImagesFromStorage();
+    storedImages.forEach(src => addImageToGrid(src));
+  });
+</script>
+</body>
+</html>
