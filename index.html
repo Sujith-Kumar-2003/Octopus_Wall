@@ -171,20 +171,29 @@
 </div>
 
 <script>
-  // Define your master key (change as needed)
+  // Define your master key and select DOM elements
   const MASTER_KEY = "Thedonstar12345@#$";
-
   const postBtn = document.getElementById('postBtn');
   const clearBtn = document.getElementById('clearBtn');
   const fileInput = document.getElementById('fileInput');
   const imageGrid = document.getElementById('imageGrid');
-  const bgVideo = document.getElementById('bgVideo');
+  const bgVideo = document.getElementById('bgVideo');  // Declare bgVideo once
 
   // Set the video playback rate to 0.3 (30% speed)
   window.addEventListener('DOMContentLoaded', () => {
     if (bgVideo) {
       bgVideo.playbackRate = 0.3;
+      // Ensure looping is disabled
+      bgVideo.removeAttribute('loop');
+      // Pause the video after 30 seconds
+      setTimeout(() => {
+        bgVideo.pause();
+      }, 30000); // 30,000 milliseconds
     }
+
+    // Load stored images on page load
+    const storedImages = loadImagesFromStorage();
+    storedImages.forEach(src => addImageToGrid(src));
   });
 
   // Trigger file selection when Post button is clicked
@@ -292,24 +301,6 @@
     }
     fileInput.value = ''; // Reset file input
   });
-
-  // Load stored images on page load
-  window.addEventListener('DOMContentLoaded', () => {
-    const storedImages = loadImagesFromStorage();
-    storedImages.forEach(src => addImageToGrid(src));
-  });
-</script>
-<script>
-  // Get the video element by its ID
-  const bgVideo = document.getElementById('bgVideo');
-
-  // Optionally, ensure looping is disabled
-  bgVideo.removeAttribute('loop');
-
-  // Pause the video after 30 seconds
-  setTimeout(() => {
-    bgVideo.pause();
-  }, 30000); // 30 seconds in milliseconds
 </script>
 
 </body>
