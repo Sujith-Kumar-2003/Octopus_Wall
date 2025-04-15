@@ -199,25 +199,16 @@
     fileInput.click();
   });
 
-  // Clear the gallery by prompting for the master key and sending the request to your server if needed.
-  // For clearing the gallery, you can choose to either do a local removal (if you want)
-  // or send a server request (if your server manages deletion). Here we simply clear locally.
   clearBtn.addEventListener('click', () => {
     const userKey = prompt("Enter master key to clear the gallery:");
-    // The server will verify the key; here, we assume you want to simply clear localStorage if deletion is approved.
-    // Optionally, you could send a separate request to clear multiple files.
-    // For a basic demo, we only clear client-side storage.
-    // (Security note: In a real-world scenario, you’d send this key to your secure backend.)
     if (!userKey) {
       alert("No key entered. Gallery not cleared.");
       return;
     }
-    // You may optionally send userKey to your backend to clear server-side files if desired.
     localStorage.removeItem('images');
     imageGrid.innerHTML = '';
   });
 
-  // LocalStorage helper functions (store an array of objects: { src, filename })
   function saveImagesToStorage(imagesArray) {
     localStorage.setItem('images', JSON.stringify(imagesArray));
   }
@@ -226,19 +217,15 @@
     return storedImages ? JSON.parse(storedImages) : [];
   }
 
-  // Create and append an image element to the grid; 'image' is an object { src, filename }
   function addImageToGrid(image) {
     const { src, filename } = image;
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
-    // Optionally store the filename in a data attribute
     gridItem.dataset.filename = filename;
 
     const img = document.createElement('img');
     img.src = src;
     gridItem.appendChild(img);
-
-    // Create delete button overlay for the image
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
     deleteBtn.textContent = '×';
@@ -249,7 +236,6 @@
         alert("No key entered. Image not deleted.");
         return;
       }
-      // Send a deletion request to your Flask backend using the actual filename and the key supplied by the user.
       deleteImageFromServer(filename, gridItem, userKey);
     });
     gridItem.appendChild(deleteBtn);
