@@ -18,25 +18,27 @@ def home():
 
 @app.route('/upload_image', methods=['POST'])
 def upload_image():
+  password = request.form.get("password")
+  if password != MASTER_KEY:
+    return jsonify({"error": "Unauthorized"}), 401
+
   if 'file' not in request.files:
     return jsonify({"error": "No file part"}), 400
+
   file = request.files['file']
   if file.filename == '':
     return jsonify({"error": "No selected file"}), 400
-  # You might want to secure the filename here
+
   file_path = os.path.join(IMAGES_DIR, file.filename)
   file.save(file_path)
   return jsonify({"success": True, "filename": file.filename})
 
-
 @app.route('/list_images')
 def list_images():
-  # List all files in IMAGES_DIR
   files = os.listdir(IMAGES_DIR)
-  # Optionally, filter by extension to only return images
   image_files = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4'))]
   return jsonify({"images": image_files})
-# Example delete_image endpoint
+
 @app.route('/delete_image', methods=['POST'])
 def delete_image():
   data = request.get_json()
@@ -62,12 +64,10 @@ def delete_image():
   except Exception as e:
     return jsonify({"error": str(e)}), 500
 
-# Serve images if needed
 @app.route('/images/<path:filename>')
 def serve_image(filename):
   return send_from_directory(IMAGES_DIR, filename)
 
-# Optional health check endpoint
 @app.route('/healthz')
 def healthz():
   return 'OK', 200
