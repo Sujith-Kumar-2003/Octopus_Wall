@@ -5,8 +5,145 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Octopus Wall</title>
   <style>
-    /* (Your existing CSS remains unchanged) */
-    /* Background Video, header, grid-item styling, etc. */
+    /* Basic Reset */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    /* Background Video */
+    #bgVideo {
+      position: fixed;
+      top: 0;
+      left: 0;
+      min-width: 100%;
+      min-height: 100%;
+      z-index: -1;
+      object-fit: cover;
+      filter: brightness(0.8);
+    }
+    body {
+      font-family: 'Roboto', Tahoma, Geneva, Verdana, sans-serif;
+      color: #fff;
+      padding: 20px;
+      background-color: #000;
+    }
+    /* Header Styling with Red & Black Gradient */
+    header {
+      background: linear-gradient(135deg, #b30000, #0d0d0d);
+      padding: 20px 30px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.5);
+    }
+    header h1 {
+      font-size: 24px;
+    }
+    header .buttons {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 10px 18px;
+      font-size: 16px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background-color 0.2s, transform 0.2s;
+    }
+    /* Post Button */
+    #postBtn {
+      background-color: #b30000;
+      color: #fff;
+      font-weight: bold;
+    }
+    #postBtn:hover {
+      background-color: #a30000;
+      transform: scale(1.03);
+    }
+    /* Clear Button */
+    #clearBtn {
+      background-color: #0d0d0d;
+      color: #b30000;
+    }
+    #clearBtn:hover {
+      background-color: #1a1a1a;
+      transform: scale(1.03);
+    }
+    /* Container Styling */
+    .container {
+      max-width: 95%;
+      margin: 0 auto;
+    }
+    /* Masonry Layout Using CSS Columns */
+    .grid {
+      column-count: 3;
+      column-gap: 15px;
+    }
+    .grid-item {
+      break-inside: avoid;
+      margin-bottom: 15px;
+      background-color: #1a1a1a;
+      border-radius: 15px;
+      overflow: hidden;
+      box-shadow: 0 2px 8px rgba(179, 0, 0, 0.5);
+      animation: fadeIn 0.5s ease;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    .grid-item img {
+      width: 100%;
+      display: block;
+    }
+    /* Delete Button Overlay */
+    .delete-btn {
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      background-color: rgba(179, 0, 0, 0.8);
+      border: none;
+      color: #fff;
+      border-radius: 50%;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+    .grid-item:hover .delete-btn {
+      opacity: 1;
+    }
+    /* FadeIn Animation */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    /* Responsive Adjustments */
+    @media (max-width: 800px) {
+      .grid {
+        column-count: 2;
+      }
+    }
+    @media (max-width: 500px) {
+      .grid {
+        column-count: 1;
+      }
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header .buttons {
+        margin-top: 10px;
+      }
+    }
   </style>
 </head>
 <body>
