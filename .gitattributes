@@ -153,7 +153,7 @@ Procfile    text
 *.m4v  binary
 *.mng  binary
 *.mov  binary
-*.mp4 filter=lfs diff=lfs merge=lfs -text
+; *.mp4 filter=lfs diff=lfs merge=lfs -text
 *.mpeg binary
 *.mpg  binary
 *.ogv  binary
