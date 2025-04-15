@@ -251,16 +251,26 @@
   }
 
   fileInput.addEventListener('change', async (event) => {
+    const userKey = prompt("Enter master key to upload images:");
+    if (!userKey) {
+      alert("No key entered. Upload canceled.");
+      return;
+    }
+
     const files = Array.from(event.target.files);
     let imagesArray = loadImagesFromStorage();
+
     for (const file of files) {
       const formData = new FormData();
       formData.append("file", file);
+      formData.append("password", userKey);  // Include master key in upload
+
       try {
         const response = await fetch('https://octopus-wall.onrender.com/upload_image', {
           method: 'POST',
           body: formData
         });
+
         const result = await response.json();
         if (response.ok && result.success) {
           const reader = new FileReader();
@@ -277,10 +287,11 @@
         }
       } catch (err) {
         console.error(err);
-        alert("Error during file upload.");
+        alert("An error occurred during the file upload.");
       }
     }
-    fileInput.value = '';
+
+    fileInput.value = ''; // Reset input
   });
 
   async function deleteImageFromServer(filename, gridItem, userKey) {
