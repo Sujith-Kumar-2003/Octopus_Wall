@@ -16,6 +16,18 @@ if not os.path.exists(IMAGES_DIR):
 def home():
   return render_template('index.html')
 
+@app.route('/upload_image', methods=['POST'])
+def upload_image():
+  if 'file' not in request.files:
+    return jsonify({"error": "No file part"}), 400
+  file = request.files['file']
+  if file.filename == '':
+    return jsonify({"error": "No selected file"}), 400
+  # You might want to secure the filename here
+  file_path = os.path.join(IMAGES_DIR, file.filename)
+  file.save(file_path)
+  return jsonify({"success": True, "filename": file.filename})
+
 # Example delete_image endpoint
 @app.route('/delete_image', methods=['POST'])
 def delete_image():
