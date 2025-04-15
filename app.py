@@ -28,6 +28,14 @@ def upload_image():
   file.save(file_path)
   return jsonify({"success": True, "filename": file.filename})
 
+
+@app.route('/list_images')
+def list_images():
+  # List all files in IMAGES_DIR
+  files = os.listdir(IMAGES_DIR)
+  # Optionally, filter by extension to only return images
+  image_files = [f for f in files if f.lower().endswith(('.jpg', '.jpeg', '.png', '.mp4'))]
+  return jsonify({"images": image_files})
 # Example delete_image endpoint
 @app.route('/delete_image', methods=['POST'])
 def delete_image():

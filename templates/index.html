@@ -170,54 +170,55 @@
 </div>
 
 <script>
-  // Select necessary DOM elements
   const postBtn = document.getElementById('postBtn');
   const clearBtn = document.getElementById('clearBtn');
   const fileInput = document.getElementById('fileInput');
   const imageGrid = document.getElementById('imageGrid');
   const bgVideo = document.getElementById('bgVideo');
 
-  // On DOM load, set up video and load images from localStorage
   window.addEventListener('DOMContentLoaded', () => {
     if (bgVideo) {
-      bgVideo.playbackRate = 0.3;   // 30% speed
+      bgVideo.playbackRate = 0.3;
       bgVideo.removeAttribute('loop');
-      setTimeout(() => {
-        bgVideo.pause();
-      }, 30000);
+      setTimeout(() => bgVideo.pause(), 30000);
     }
-    // Load images stored in localStorage (each image: { src, filename })
-    const storedImages = loadImagesFromStorage();
-    storedImages.forEach(image => addImageToGrid(image));
+    loadGlobalGallery();
   });
 
-  // Trigger file selection when "Add More" is clicked
-  postBtn.addEventListener('click', () => {
-    fileInput.click();
-  });
+  postBtn.addEventListener('click', () => fileInput.click());
 
-  // Clear the gallery (only client-side in this example)
   clearBtn.addEventListener('click', () => {
     const userKey = prompt("Enter master key to clear the gallery:");
-    if (!userKey) {
-      alert("No key entered. Gallery not cleared.");
-      return;
-    }
-    // Optionally, you could also send a request to the backend to remove files
+    if (!userKey) return alert("No key entered.");
     localStorage.removeItem('images');
     imageGrid.innerHTML = '';
   });
 
-  // LocalStorage helper functions
+  async function loadGlobalGallery() {
+    try {
+      const response = await fetch('https://octopus-wall.onrender.com/list_images');
+      const data = await response.json();
+      if (response.ok && data.images) {
+        data.images.forEach(filename => {
+          const imageUrl = `https://octopus-wall.onrender.com/images/${filename}`;
+          const image = { src: imageUrl, filename: filename };
+          addImageToGrid(image);
+        });
+      }
+    } catch (error) {
+      console.error("Error loading global gallery:", error);
+    }
+  }
+
   function saveImagesToStorage(imagesArray) {
     localStorage.setItem('images', JSON.stringify(imagesArray));
   }
+
   function loadImagesFromStorage() {
     const storedImages = localStorage.getItem('images');
     return storedImages ? JSON.parse(storedImages) : [];
   }
 
-  // Add image element to the grid (image: { src, filename })
   function addImageToGrid(image) {
     const { src, filename } = image;
     const gridItem = document.createElement('div');
@@ -234,34 +235,25 @@
     deleteBtn.addEventListener('click', (event) => {
       event.stopPropagation();
       const userKey = prompt("Enter master key to delete this image:");
-      if (!userKey) {
-        alert("No key entered. Image not deleted.");
-        return;
-      }
+      if (!userKey) return alert("No key entered.");
       deleteImageFromServer(filename, gridItem, userKey);
     });
     gridItem.appendChild(deleteBtn);
-
     imageGrid.appendChild(gridItem);
   }
 
-  // Remove image element and update localStorage
   function deleteImage(filename, gridItem) {
     gridItem.remove();
     let imagesArray = loadImagesFromStorage();
     const index = imagesArray.findIndex(image => image.filename === filename);
-    if (index > -1) {
-      imagesArray.splice(index, 1);
-    }
+    if (index > -1) imagesArray.splice(index, 1);
     saveImagesToStorage(imagesArray);
   }
 
-  // Handle image uploads: send the file to the Flask backend via FormData
   fileInput.addEventListener('change', async (event) => {
     const files = Array.from(event.target.files);
     let imagesArray = loadImagesFromStorage();
     for (const file of files) {
-      // Create FormData and append the file
       const formData = new FormData();
       formData.append("file", file);
       try {
@@ -271,8 +263,6 @@
         });
         const result = await response.json();
         if (response.ok && result.success) {
-          // Use the returned filename from the server
-          // Optionally, generate a data URL from the file for display
           const reader = new FileReader();
           reader.onload = function(e) {
             const dataUrl = e.target.result;
@@ -287,30 +277,29 @@
         }
       } catch (err) {
         console.error(err);
-        alert("An error occurred during the file upload.");
+        alert("Error during file upload.");
       }
     }
-    fileInput.value = '';  // Reset file input
+    fileInput.value = '';
   });
 
-  // Send a deletion request to the Flask backend
   async function deleteImageFromServer(filename, gridItem, userKey) {
     try {
       const response = await fetch('https://octopus-wall.onrender.com/delete_image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ password: userKey, filename: filename })
+        body: JSON.stringify({ password: userKey, filename })
       });
       const result = await response.json();
       if (response.ok && result.success) {
-        alert("Image deleted successfully on the server.");
+        alert("Image deleted successfully.");
         deleteImage(filename, gridItem);
       } else {
         alert("Deletion failed: " + (result.error || "Unknown error"));
       }
     } catch (err) {
       console.error(err);
-      alert("An error occurred while deleting the image.");
+      alert("Error during deletion.");
     }
   }
 </script>
