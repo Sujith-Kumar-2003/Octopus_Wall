@@ -20,7 +20,6 @@
       min-height: 100%;
       z-index: -1;
       object-fit: cover;
-      /* Adjust brightness as necessary */
       filter: brightness(0.8);
     }
     body {
@@ -122,7 +121,7 @@
     .grid-item:hover .delete-btn {
       opacity: 1;
     }
-    /* FadeIn Animation for Grid Items */
+    /* FadeIn Animation */
     @keyframes fadeIn {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
@@ -171,48 +170,54 @@
 </div>
 
 <script>
-  // Define your master key and select DOM elements
-  const MASTER_KEY = "Thedonstar12345@#$";
+  // (No MASTER_KEY is declared here!)
+
+  // Select necessary DOM elements
   const postBtn = document.getElementById('postBtn');
   const clearBtn = document.getElementById('clearBtn');
   const fileInput = document.getElementById('fileInput');
   const imageGrid = document.getElementById('imageGrid');
-  const bgVideo = document.getElementById('bgVideo');  // Declare bgVideo once
+  const bgVideo = document.getElementById('bgVideo');
 
-  // Set the video playback rate to 0.3 (30% speed)
+  // On DOM load, set up the video controls and load stored images
   window.addEventListener('DOMContentLoaded', () => {
     if (bgVideo) {
-      bgVideo.playbackRate = 0.3;
-      // Ensure looping is disabled
-      bgVideo.removeAttribute('loop');
-      // Pause the video after 30 seconds
+      bgVideo.playbackRate = 0.3;       // Play at 30% speed
+      bgVideo.removeAttribute('loop');  // Disable looping
       setTimeout(() => {
-        bgVideo.pause();
-      }, 30000); // 30,000 milliseconds
+        bgVideo.pause();                // Pause after 30 seconds
+      }, 30000);
     }
 
-    // Load stored images on page load
+    // Load images stored in localStorage (each image is an object: { src, filename })
     const storedImages = loadImagesFromStorage();
-    storedImages.forEach(src => addImageToGrid(src));
+    storedImages.forEach(image => addImageToGrid(image));
   });
 
-  // Trigger file selection when Post button is clicked
+  // Trigger file selection when "Add More" is clicked
   postBtn.addEventListener('click', () => {
     fileInput.click();
   });
 
-  // Clear the gallery after verifying the master key
+  // Clear the gallery by prompting for the master key and sending the request to your server if needed.
+  // For clearing the gallery, you can choose to either do a local removal (if you want)
+  // or send a server request (if your server manages deletion). Here we simply clear locally.
   clearBtn.addEventListener('click', () => {
-    const key = prompt("Enter master key to clear the gallery:");
-    if (key !== MASTER_KEY) {
-      alert("Incorrect master key. Gallery not cleared.");
+    const userKey = prompt("Enter master key to clear the gallery:");
+    // The server will verify the key; here, we assume you want to simply clear localStorage if deletion is approved.
+    // Optionally, you could send a separate request to clear multiple files.
+    // For a basic demo, we only clear client-side storage.
+    // (Security note: In a real-world scenario, you’d send this key to your secure backend.)
+    if (!userKey) {
+      alert("No key entered. Gallery not cleared.");
       return;
     }
+    // You may optionally send userKey to your backend to clear server-side files if desired.
     localStorage.removeItem('images');
-    imageGrid.innerHTML = ''; // Remove all images from the grid
+    imageGrid.innerHTML = '';
   });
 
-  // LocalStorage helper functions
+  // LocalStorage helper functions (store an array of objects: { src, filename })
   function saveImagesToStorage(imagesArray) {
     localStorage.setItem('images', JSON.stringify(imagesArray));
   }
@@ -221,45 +226,49 @@
     return storedImages ? JSON.parse(storedImages) : [];
   }
 
-  // Function to create and append an image element in the grid
-  function addImageToGrid(src) {
+  // Create and append an image element to the grid; 'image' is an object { src, filename }
+  function addImageToGrid(image) {
+    const { src, filename } = image;
     const gridItem = document.createElement('div');
     gridItem.className = 'grid-item';
+    // Optionally store the filename in a data attribute
+    gridItem.dataset.filename = filename;
 
     const img = document.createElement('img');
     img.src = src;
     gridItem.appendChild(img);
 
-    // Create delete button overlay for individual image deletion
+    // Create delete button overlay for the image
     const deleteBtn = document.createElement('button');
     deleteBtn.className = 'delete-btn';
     deleteBtn.textContent = '×';
     deleteBtn.addEventListener('click', (event) => {
       event.stopPropagation();
-      const key = prompt("Enter master key to delete this image:");
-      if (key !== MASTER_KEY) {
-        alert("Incorrect master key. Image not deleted.");
+      const userKey = prompt("Enter master key to delete this image:");
+      if (!userKey) {
+        alert("No key entered. Image not deleted.");
         return;
       }
-      deleteImage(src, gridItem);
+      // Send a deletion request to your Flask backend using the actual filename and the key supplied by the user.
+      deleteImageFromServer(filename, gridItem, userKey);
     });
     gridItem.appendChild(deleteBtn);
 
     imageGrid.appendChild(gridItem);
   }
 
-  // Function to delete an image from the grid and update localStorage
-  function deleteImage(src, gridItem) {
+  // Remove an image from the grid and update storage by its filename
+  function deleteImage(filename, gridItem) {
     gridItem.remove();
-    let imagesArray = loadImagesFromStorage();
-    const index = imagesArray.findIndex(image => image === src);
+    let imagesArray = loadImagesToStorage();
+    const index = imagesArray.findIndex(image => image.filename === filename);
     if (index > -1) {
       imagesArray.splice(index, 1);
     }
     saveImagesToStorage(imagesArray);
   }
 
-  // Function to resize/compress the image using a canvas
+  // Function to resize/compress an image file using a canvas; returns a Promise that resolves to the data URL
   function resizeImage(file, maxWidth = 600, quality = 0.7) {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
@@ -283,17 +292,21 @@
     });
   }
 
-  // Handle image uploads (with resizing) and update storage
+  // Handle image uploads with resizing, assign a real filename, and update storage
   fileInput.addEventListener('change', async (event) => {
     const files = Array.from(event.target.files);
     let imagesArray = loadImagesFromStorage();
     try {
+      // For each file, get the data URL and assign a generated filename
       const newImages = await Promise.all(
-        files
-          .filter(file => file && file.type.startsWith('image/'))
-          .map(file => resizeImage(file))
+        files.filter(file => file && file.type.startsWith('image/'))
+          .map(file => resizeImage(file).then(src => {
+            // Generate a unique filename using the current timestamp and a random number
+            const filename = "img_" + Date.now() + "_" + Math.floor(Math.random() * 1000) + ".jpg";
+            return { src, filename };
+          }))
       );
-      newImages.forEach(src => addImageToGrid(src));
+      newImages.forEach(image => addImageToGrid(image));
       imagesArray = imagesArray.concat(newImages);
       saveImagesToStorage(imagesArray);
     } catch (error) {
@@ -301,7 +314,28 @@
     }
     fileInput.value = ''; // Reset file input
   });
-</script>
 
+  // Send a deletion request to the Flask backend using the user-supplied key
+  async function deleteImageFromServer(filename, gridItem, userKey) {
+    try {
+      const response = await fetch('http://127.0.0.1:5000/delete_image', {  // Adjust URL as needed for your server
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: userKey, filename: filename })
+      });
+      const result = await response.json();
+      if (response.ok && result.success) {
+        alert("Image deleted successfully on the server.");
+        // Remove it from the client view and update storage
+        deleteImage(filename, gridItem);
+      } else {
+        alert("Deletion failed: " + (result.error || "Unknown error"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("An error occurred while deleting the image.");
+    }
+  }
+</script>
 </body>
 </html>
